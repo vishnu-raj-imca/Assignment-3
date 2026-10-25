@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Expense Tracker</title>
+<style>
+body {
+  font-family: Arial;
+  background: #eee;
+  text-align: center;
+}
+.container {
+  background: white;
+  padding: 20px;
+  margin: 30px auto;
+  max-width: 500px;
+  border-radius: 10px;
+}
+input, select, button {
+  padding: 10px;
+  margin: 5px;
+}
+button {
+  background: blue;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+li {
+  margin: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Expense Tracker</h2>
+
+<input id="name" placeholder="Expense name">
+<input id="amount" type="number" placeholder="Amount">
+
+<select id="category">
+<option>Food</option>
+<option>Travel</option>
+<option>Shopping</option>
+<option>Bills</option>
+</select>
+
+<button onclick="addExpense()">Add</button>
+
+<br>
+<input id="search" placeholder="Search expense"
+oninput="display()">
+
+<h3>Total: ₹<span id="total">0</span></h3>
+<ul id="list"></ul>
+</div>
+
+<script>
+let expenses = JSON.parse(
+  localStorage.getItem("expenses") || "[]"
+);
+let editId = null;
+
+function save() {
+  localStorage.setItem("expenses", JSON.stringify(expenses));
+}
+
+function addExpense() {
+  let name = document.getElementById("name").value.trim();
+  let amount = Number(document.getElementById("amount").value);
+  let category = document.getElementById("category").value;
+
+  if (name === "" || amount <= 0 || !Number.isFinite(amount)) {
+    alert("Enter valid details");
+    return;
+  }
+
+  if (editId !== null) {
+    expenses = expenses.map(e =>
+      e.id === editId ? {...e, name, amount, category} : e
+    );
+    editId = null;
+  } else {
+    expenses.push({id: Date.now(), name, amount, category});
+  }
+
+  save();
+  document.getElementById("name").value = "";
+  document.getElementById("amount").value = "";
+  display();
+}
+
+function display() {
+  let list = document.getElementById("list");
+  let search = document.getElementById("search").value.toLowerCase();
+  list.innerHTML = "";
+  let total = 0;
+
+  expenses.forEach(e => {
+    total += e.amount;
+
+    if (!e.name.toLowerCase().includes(search)) return;
+
+    let li = document.createElement("li");
+    li.appendChild(document.createTextNode(
+      e.name + " - ₹" + e.amount + " (" + e.category + ") "
+    ));
+
+    let edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.onclick = function() {
+      document.getElementById("name").value = e.name;
+      document.getElementById("amount").value = e.amount;
+      document.getElementById("category").value = e.category;
+      editId = e.id;
+    };
+
+    let del = document.createElement("button");
+    del.textContent = "Delete";
+    del.onclick = function() {
+      expenses = expenses.filter(x => x.id !== e.id);
+      save();
+      display();
+    };
+
+    li.append(edit, del);
+    list.appendChild(li);
+  });
+
+  document.getElementById("total").textContent = total;
+}
+
+display();
+</script>
+
+</body>
+</html>
